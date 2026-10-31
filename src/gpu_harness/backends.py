@@ -271,7 +271,12 @@ class PyOpenGLBackend(RenderBackend):
 
         self._gl = GL
         self._opengl_version = getattr(OpenGL, "__version__", "unknown")
-        self._ctx = glcontext.default_backend()(mode="standalone", glversion=330)
+        try:
+            self._ctx = glcontext.default_backend()(mode="standalone", glversion=330)
+        except Exception:
+            self._ctx = glcontext.get_backend_by_name("egl")(
+                mode="standalone", glversion=330
+            )
 
         # Create off-screen FBO with RGBA8 color texture and DEPTH24 renderbuffer
         self._fbo = GL.glGenFramebuffers(1)

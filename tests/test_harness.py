@@ -40,33 +40,40 @@ def test_scene_registry_has_8_distinct_scenes() -> None:
 
 def test_moderngl_and_pyopengl_cross_backend_parity() -> None:
     """Verify ModernGL and PyOpenGL backends render bit-identical / SSIM>=0.999 frames."""
+    frames_mgl = {}
     mgl = ModernGLBackend(128, 128)
-    pgl = PyOpenGLBackend(128, 128)
     try:
         assert mgl.backend_name == "moderngl"
-        assert pgl.backend_name == "pyopengl"
         assert "gl_renderer" in mgl.get_device_info()
-        assert "gl_renderer" in pgl.get_device_info()
-
         for scene in ALL_SCENES:
             scene.render(mgl, inject_regression=False)
             mgl.finish()
-            frame_mgl = mgl.read_pixels()
-
-            scene.render(pgl, inject_regression=False)
-            pgl.finish()
-            frame_pgl = pgl.read_pixels()
-
-            assert frame_mgl.shape == (128, 128, 4)
-            assert frame_pgl.shape == (128, 128, 4)
-            # Ensure scene actually rendered non-blank content
-            assert float(np.std(frame_mgl[..., :3])) > 10.0
-
-            ssim_val, _ = compute_ssim(frame_mgl, frame_pgl)
-            assert ssim_val >= 0.999, f"Cross-backend mismatch on {scene.metadata.scene_id}: SSIM={ssim_val}"
+            frames_mgl[scene.metadata.scene_id] = mgl.read_pixels()
     finally:
         mgl.release()
+
+    frames_pgl = {}
+    pgl = PyOpenGLBackend(128, 128)
+    try:
+        assert pgl.backend_name == "pyopengl"
+        assert "gl_renderer" in pgl.get_device_info()
+        for scene in ALL_SCENES:
+            scene.render(pgl, inject_regression=False)
+            pgl.finish()
+            frames_pgl[scene.metadata.scene_id] = pgl.read_pixels()
+    finally:
         pgl.release()
+
+    for scene in ALL_SCENES:
+        sid = scene.metadata.scene_id
+        frame_mgl = frames_mgl[sid]
+        frame_pgl = frames_pgl[sid]
+        assert frame_mgl.shape == (128, 128, 4)
+        assert frame_pgl.shape == (128, 128, 4)
+        assert float(np.std(frame_mgl[..., :3])) > 10.0
+
+        ssim_val, _ = compute_ssim(frame_mgl, frame_pgl)
+        assert ssim_val >= 0.999, f"Cross-backend mismatch on {sid}: SSIM={ssim_val}"
 
 
 def test_comparator_tolerance_ssim_and_diff_saving(tmp_path: Path) -> None:
