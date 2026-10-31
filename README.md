@@ -1,5 +1,8 @@
 # GPU Render Regression Test Harness
 
+[![GitLab CI Pipeline](https://gitlab.com/psathwikaa/gpu-render-regression-harness/badges/main/pipeline.svg)](https://gitlab.com/psathwikaa/gpu-render-regression-harness/-/pipelines)
+[![GitHub Actions CI](https://github.com/psathwikaa/gpu-render-regression-harness/actions/workflows/ci.yml/badge.svg)](https://github.com/psathwikaa/gpu-render-regression-harness/actions)
+
 An automated **off-screen OpenGL 3.3 Core graphics regression and frame-time stability testing framework** built with **Python**, **ModernGL**, **PyOpenGL**, **NumPy**, **SciPy**, **GitLab CI**, and **GitHub Actions**.
 
 ---
@@ -127,7 +130,7 @@ gpu-render-regression-harness/
 
 **Windows (PowerShell):**
 ```powershell
-git clone <YOUR_GITHUB_REPO_URL>
+git clone https://github.com/psathwikaa/gpu-render-regression-harness.git
 cd gpu-render-regression-harness
 python -m venv venv
 .\venv\Scripts\Activate.ps1
@@ -136,7 +139,7 @@ pip install -r requirements.txt
 
 **Linux / macOS (Bash):**
 ```bash
-git clone <YOUR_GITHUB_REPO_URL>
+git clone https://github.com/psathwikaa/gpu-render-regression-harness.git
 cd gpu-render-regression-harness
 python3 -m venv venv
 source venv/bin/activate
