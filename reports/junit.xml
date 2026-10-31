@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuite name="GPU Render Regression Suite" tests="8" failures="0" errors="0" skipped="0" time="3.3952" timestamp="2026-10-31T11:40:46.178232+00:00">
+  <properties>
+    <property name="backend" value="moderngl" />
+    <property name="backend_version" value="5.13.0" />
+    <property name="gl_vendor" value="Intel" />
+    <property name="gl_renderer" value="Intel(R) UHD Graphics" />
+    <property name="gl_version" value="3.3.0 - Build 31.0.101.5186" />
+    <property name="resolution" value="512x512" />
+  </properties>
+  <testcase classname="gpu_harness.scenes.Triangles &amp; Vertex Interpolation" name="01_rgb_triangle (Barycentric RGB Triangle)" time="0.0182">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.9096 ms | P95=1.1183 ms | CV=0.3553 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Indexed Geometry (EBO/IBO)" name="02_indexed_quad_uv (Indexed Quad Mesh &amp; Procedural UV Pattern)" time="0.0194">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.9721 ms | P95=1.0715 ms | CV=0.1015 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Textures &amp; Filtering" name="03_checker_texture_2d (2D Procedural Texture &amp; UV Mapping)" time="0.0238">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=1.1904 ms | P95=1.5893 ms | CV=0.2221 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Blending &amp; Compositing" name="04_alpha_blending_glass (Multi-Layer Translucent Alpha Blending)" time="0.0197">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.9867 ms | P95=1.2164 ms | CV=0.1411 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Depth Testing (Z-Buffer)" name="05_depth_test_intersection (3D Depth Buffer Intersecting Planes)" time="0.0135">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.6737 ms | P95=0.783 ms | CV=0.1095 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Depth + Blending Pipeline State" name="06_depth_and_blending_composite (Multi-Pass Depth &amp; Translucent Composite)" time="0.0191">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.9532 ms | P95=1.1987 ms | CV=0.115 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.Instanced Rendering" name="07_instanced_primitives_grid (Hardware Instanced 6x6 Geometric Grid)" time="0.0152">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=0.7603 ms | P95=0.9026 ms | CV=0.1147 | Stability=STABLE</system-out>
+  </testcase>
+  <testcase classname="gpu_harness.scenes.3D Shading &amp; Lighting" name="08_phong_shaded_sphere (3D Blinn-Phong Lit Sphere &amp; Orbiting Ring)" time="0.0278">
+    <system-out>SSIM=1.0 | PSNR=100.0 dB | MeanFrame=1.3883 ms | P95=1.9823 ms | CV=0.2391 | Stability=STABLE</system-out>
+  </testcase>
+</testsuite>

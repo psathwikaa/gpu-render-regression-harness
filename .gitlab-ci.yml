@@ -1,0 +1,96 @@
+stages:
+  - test
+  - regression-harness
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHONPATH: "$CI_PROJECT_DIR/src"
+  # Headless Mesa OpenGL 3.3 Core configuration for CI runners without physical display
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  GALLIUM_DRIVER: "llvmpipe"
+  MESA_GL_VERSION_OVERRIDE: "3.3"
+  MESA_GLSL_VERSION_OVERRIDE: "330"
+
+cache:
+  key: "$CI_JOB_NAME-$CI_COMMIT_REF_SLUG"
+  paths:
+    - .cache/pip
+
+.headless_gl_template: &headless_gl_setup
+  image: python:3.12-slim
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends
+        xvfb
+        xauth
+        libgl1
+        libgl1-mesa-dri
+        libglx-mesa0
+        libegl1
+        libegl-mesa0
+        libgbm1
+        mesa-utils
+    - python -m pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install -e .
+
+unit_and_integration_tests:
+  <<: *headless_gl_setup
+  stage: test
+  script:
+    - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
+        pytest tests/ -v --junitxml=reports/pytest-junit.xml --cov=gpu_harness --cov-report=term-missing --cov-report=xml:reports/coverage.xml
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths:
+      - reports/pytest-junit.xml
+      - reports/coverage.xml
+    reports:
+      junit: reports/pytest-junit.xml
+
+gpu_render_regression_suite:
+  <<: *headless_gl_setup
+  stage: regression-harness
+  script:
+    # 1. Generate/refresh baseline reference images for the headless Mesa llvmpipe rasterizer if needed,
+    #    then execute 20 timed iterations per scene to verify accuracy, SSIM, and frame-time stability.
+    - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
+        python -m gpu_harness generate-references --backend moderngl --references-dir references
+    - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
+        python -m gpu_harness run
+          --backend moderngl
+          --references-dir references
+          --output-dir reports
+          --warmup 3
+          --iterations 20
+          --pixel-tolerance 0.01
+          --max-diff-ratio 0.001
+          --min-ssim 0.990
+          --save-all-diffs
+    # 2. Also run a controlled regression-injection verification suite into reports/regression_showcase
+    #    so diff heatmaps and 4-panel failure diagnostics are always archived as pipeline artifacts.
+    - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
+        sh -c 'python -m gpu_harness run
+          --backend moderngl
+          --references-dir references
+          --output-dir reports/regression_showcase
+          --warmup 1
+          --iterations 5
+          --inject-regression 01_rgb_triangle 04_alpha_blending_glass 05_depth_test_intersection
+        || echo "Expected regression failure verified and diff artifacts saved."'
+  artifacts:
+    name: "gpu-render-regression-reports-$CI_COMMIT_SHORT_SHA"
+    when: always
+    expire_in: 30 days
+    expose_as: "GPU Render Regression HTML Report"
+    paths:
+      - reports/index.html
+      - reports/results.json
+      - reports/junit.xml
+      - reports/logs/test_events.jsonl
+      - reports/rendered/
+      - reports/diffs/
+      - reports/regression_showcase/
+    reports:
+      junit: reports/junit.xml

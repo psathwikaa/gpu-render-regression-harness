@@ -1,0 +1,98 @@
+name: GPU Render Regression CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+env:
+  PYTHONPATH: src
+  LIBGL_ALWAYS_SOFTWARE: "1"
+  GALLIUM_DRIVER: "llvmpipe"
+  MESA_GL_VERSION_OVERRIDE: "3.3"
+  MESA_GLSL_VERSION_OVERRIDE: "330"
+
+jobs:
+  gpu-regression-harness:
+    name: Headless OpenGL 3.3 Regression Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install headless OpenGL (Mesa llvmpipe + Xvfb)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            xvfb \
+            xauth \
+            libgl1 \
+            libgl1-mesa-dri \
+            libglx-mesa0 \
+            libegl1 \
+            libegl-mesa0 \
+            libgbm1 \
+            mesa-utils
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Run unit & integration test suite (pytest)
+        run: |
+          xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset" \
+            pytest tests/ -v --junitxml=reports/pytest-junit.xml --cov=gpu_harness --cov-report=term-missing
+
+      - name: Run GPU Render Regression Test Harness (20 iterations/scene)
+        run: |
+          xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset" \
+            python -m gpu_harness generate-references --backend moderngl --references-dir references
+          xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset" \
+            python -m gpu_harness run \
+              --backend moderngl \
+              --references-dir references \
+              --output-dir reports \
+              --warmup 3 \
+              --iterations 20 \
+              --pixel-tolerance 0.01 \
+              --max-diff-ratio 0.001 \
+              --min-ssim 0.990 \
+              --save-all-diffs
+
+      - name: Run injected regression showcase (verify diff artifact generation)
+        run: |
+          xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset" \
+            sh -c 'python -m gpu_harness run \
+              --backend moderngl \
+              --references-dir references \
+              --output-dir reports/regression_showcase \
+              --warmup 1 \
+              --iterations 5 \
+              --inject-regression 01_rgb_triangle 04_alpha_blending_glass 05_depth_test_intersection \
+            || echo "Expected regression failure verified and diff artifacts saved."'
+
+      - name: Upload HTML Reports, Diffs, and Structured JSONL Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gpu-render-regression-reports
+          path: |
+            reports/index.html
+            reports/results.json
+            reports/junit.xml
+            reports/logs/test_events.jsonl
+            reports/rendered/
+            reports/diffs/
+            reports/regression_showcase/
+          retention-days: 30
