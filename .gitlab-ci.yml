@@ -53,14 +53,13 @@ gpu_render_regression_suite:
   <<: *headless_gl_setup
   stage: regression-harness
   script:
-    # 1. Generate/refresh baseline reference images for the headless Mesa llvmpipe rasterizer if needed,
+    # 1. Compare against committed golden reference; never regenerate in CI,
     #    then execute 20 timed iterations per scene to verify accuracy, SSIM, and frame-time stability.
-    - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
-        python -m gpu_harness generate-references --backend moderngl --references-dir references
     - xvfb-run -a -s "-screen 0 1024x768x24 +extension GLX +render -noreset"
         python -m gpu_harness run
           --backend moderngl
           --references-dir references
+          --no-auto-reference
           --output-dir reports
           --warmup 3
           --iterations 20
