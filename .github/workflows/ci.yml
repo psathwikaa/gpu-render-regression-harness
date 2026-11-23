@@ -60,7 +60,7 @@ jobs:
             python -m gpu_harness run \
               --backend moderngl \
               --references-dir references \
-              --no-auto-references \ 
+              --no-auto-reference \ 
               --output-dir reports \
               --warmup 3 \
               --iterations 20 \
